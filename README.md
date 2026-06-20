@@ -29,16 +29,33 @@ cloud, no accounts.
 
 ---
 
-## Prerequisites
+## Quick start (one click)
+
+**Windows:** double-click **`start.bat`**. That's it.
+
+It checks for everything the app needs and installs whatever is missing —
+Node.js, project dependencies, the Live2D assets, Ollama, and a default model —
+then launches the app. Run it again any time; it's safe to repeat and only does
+work that's actually needed.
+
+**macOS / Linux:** run `./start.sh` (needs Node.js already installed).
+
+Prefer to drive it yourself? `npm run setup` runs the same checks/installs
+without launching, and prints a status report of what's ready and what isn't.
+
+> The very first run downloads the Live2D model and (if needed) the Ollama
+> model, so it can take a few minutes. Later runs are fast.
+
+## Prerequisites (handled automatically by the launcher)
 
 1. **Node.js 20.11+** (Node 22 recommended).
-2. **Ollama** installed and running:
+2. **Ollama** installed and running, with a model pulled:
    ```sh
    ollama serve
    ollama pull llama3.2
    ```
 
-## Setup
+## Manual setup
 
 ```sh
 npm install          # installs deps, then runs fetch-assets (see below)

@@ -10,6 +10,8 @@
   "scripts": {
     "postinstall": "tsx scripts/fetch-assets.ts",
     "fetch-assets": "tsx scripts/fetch-assets.ts",
+    "setup": "node scripts/setup.mjs",
+    "setup:start": "node scripts/setup.mjs --start",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
