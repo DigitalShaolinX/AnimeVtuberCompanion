@@ -1,0 +1,42 @@
+{
+  "name": "live2d-anime-companion",
+  "version": "0.1.0",
+  "description": "A Live2D anime-girl desktop companion driven by a local LLM (Ollama).",
+  "author": "digitalshaolin",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "postinstall": "tsx scripts/fetch-assets.ts",
+    "fetch-assets": "tsx scripts/fetch-assets.ts",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "lowdb": "^7.0.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^34.0.0",
+    "electron-vite": "^2.3.0",
+    "pixi-live2d-display-lipsyncpatch": "0.5.0-ls-8",
+    "pixi.js": "7.4.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.3",
+    "vitest": "^2.0.5"
+  }
+}

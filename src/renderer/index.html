@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' 'unsafe-inline' data: blob: companion:; connect-src 'self' companion: file:; img-src 'self' data: blob: companion:; media-src 'self' blob: companion: file:; script-src 'self' 'unsafe-inline'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live2D Companion</title>
+    <!--
+      Cubism Core is proprietary and fetched at install time (see
+      scripts/fetch-assets.ts). It is loaded as a classic script so it attaches
+      window.Live2DCubismCore before the renderer bundle runs.
+    -->
+    <script src="/cubism/live2dcubismcore.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/main.tsx"></script>
+  </body>
+</html>
