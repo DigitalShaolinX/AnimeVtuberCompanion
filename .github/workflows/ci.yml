@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Skip the postinstall asset fetch in CI (proprietary downloads, not needed
+      # for typecheck/test/build).
+      - run: npm ci --ignore-scripts
+      - name: Type-check
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Build (main + preload + renderer)
+        run: npm run build
+      - name: Headless smoke test (renderer mounts, no fatal crash)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          npm run smoke
