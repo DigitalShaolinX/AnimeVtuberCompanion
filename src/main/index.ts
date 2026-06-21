@@ -14,6 +14,7 @@ import { MemoryStore } from './store/memory'
 import { synthesizeWithPiper } from './tts-piper'
 import { findModelUrl, registerAssetScheme, serveAssets } from './assets'
 import { attachRendererDiagnostics, diagnosticsLogPath, initDiagnostics, log } from './diagnostics'
+import { runHeadlessProbe } from './headless'
 
 registerAssetScheme()
 
@@ -40,7 +41,10 @@ function createWindow(): void {
   })
 
   attachRendererDiagnostics(mainWindow.webContents)
-  mainWindow.on('ready-to-show', () => mainWindow?.show())
+  const headless = process.env.COMPANION_SMOKE || process.env.COMPANION_CAPTURE
+  // In headless probe/capture runs keep the window hidden (it still renders
+  // offscreen, so capturePage works) to avoid flashing a window at the user.
+  if (!headless) mainWindow.on('ready-to-show', () => mainWindow?.show())
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
     return { action: 'deny' }
@@ -52,34 +56,16 @@ function createWindow(): void {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  // Headless self-test: after the page settles, inspect the rendered DOM and
-  // exit with a pass/fail code. Used by `npm run smoke` under xvfb in CI.
-  if (process.env.COMPANION_SMOKE) {
+  // Headless probe: after the page settles (give the avatar time to load),
+  // inspect the DOM, optionally screenshot, write a report, and exit pass/fail.
+  // Drives `npm run smoke` (CI) and `npm run capture` (local autonomous loop).
+  if (headless) {
+    const capture = !!process.env.COMPANION_CAPTURE
     mainWindow.webContents.on('did-finish-load', () => {
-      setTimeout(() => void runSmokeCheck(), 4000)
+      setTimeout(() => {
+        if (mainWindow) void runHeadlessProbe(mainWindow, { capture })
+      }, 5000)
     })
-  }
-}
-
-async function runSmokeCheck(): Promise<void> {
-  const probe = `JSON.stringify({
-    rootChildren: document.getElementById('root')?.children.length ?? 0,
-    hasChatInput: !!document.querySelector('.chat-input textarea'),
-    stageStatus: (document.querySelector('.stage-status')?.textContent ?? '').trim(),
-    fatal: document.body.innerText.includes('hit an error')
-  })`
-  try {
-    const raw = await mainWindow!.webContents.executeJavaScript(probe)
-    const r = JSON.parse(raw)
-    log(`[smoke] DOM: ${raw}`)
-    const pass = r.rootChildren > 0 && r.hasChatInput && !r.fatal
-    log(`[smoke] result: ${pass ? 'PASS — renderer mounted, chat UI present' : 'FAIL'}`)
-    process.exitCode = pass ? 0 : 1
-  } catch (err) {
-    log(`[smoke] probe failed: ${(err as Error).message}`)
-    process.exitCode = 1
-  } finally {
-    app.quit()
   }
 }
 

@@ -20,7 +20,9 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "xvfb-run -a env COMPANION_SMOKE=1 electron . --no-sandbox --disable-gpu"
+    "smoke": "xvfb-run -a env COMPANION_SMOKE=1 electron . --no-sandbox --disable-gpu",
+    "capture": "node scripts/capture.mjs",
+    "iterate": "npm run build && npm run capture"
   },
   "dependencies": {
     "@pixi/unsafe-eval": "7.4.2",

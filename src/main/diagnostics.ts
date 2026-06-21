@@ -10,6 +10,17 @@ import type { WebContents } from 'electron'
  * test has something to assert against.
  */
 let logPath = ''
+const collectedErrors: string[] = []
+
+/** Recent renderer/main warnings+errors, for the headless capture report. */
+export function getCollectedErrors(): string[] {
+  return [...collectedErrors]
+}
+
+function collect(line: string): void {
+  collectedErrors.push(line)
+  if (collectedErrors.length > 100) collectedErrors.shift()
+}
 
 export function diagnosticsLogPath(): string {
   return logPath
@@ -32,8 +43,16 @@ export function initDiagnostics(): void {
   } catch {
     /* logging must never crash the app */
   }
-  process.on('uncaughtException', (e) => log(`[main] uncaughtException: ${e?.stack ?? e}`))
-  process.on('unhandledRejection', (r) => log(`[main] unhandledRejection: ${String(r)}`))
+  process.on('uncaughtException', (e) => {
+    const line = `[main] uncaughtException: ${e?.stack ?? e}`
+    collect(line)
+    log(line)
+  })
+  process.on('unhandledRejection', (r) => {
+    const line = `[main] unhandledRejection: ${String(r)}`
+    collect(line)
+    log(line)
+  })
 }
 
 export function log(line: string): void {
@@ -56,16 +75,22 @@ export function attachRendererDiagnostics(wc: WebContents): void {
     (_e: unknown, level: number, message: string, line: number, sourceId: string) => {
       // Only surface warnings/errors to keep the log readable.
       if (typeof level === 'number' && level >= 2) {
-        log(`[renderer ${LEVELS[level] ?? level}] ${message}  (${sourceId}:${line})`)
+        const out = `[renderer ${LEVELS[level] ?? level}] ${message}  (${sourceId}:${line})`
+        collect(out)
+        log(out)
       }
     }
   )
-  wc.on('render-process-gone', (_e, details) =>
-    log(`[renderer] process gone: ${details.reason} (exit ${details.exitCode})`)
-  )
-  wc.on('did-fail-load', (_e, code, desc, url) =>
-    log(`[renderer] did-fail-load ${code} ${desc} ${url}`)
-  )
+  wc.on('render-process-gone', (_e, details) => {
+    const line = `[renderer] process gone: ${details.reason} (exit ${details.exitCode})`
+    collect(line)
+    log(line)
+  })
+  wc.on('did-fail-load', (_e, code, desc, url) => {
+    const line = `[renderer] did-fail-load ${code} ${desc} ${url}`
+    collect(line)
+    log(line)
+  })
   wc.on('preload-error', (_e, preloadPath, err) =>
     log(`[renderer] preload-error ${preloadPath}: ${err?.stack ?? err}`)
   )

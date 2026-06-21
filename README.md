@@ -118,6 +118,30 @@ Cubism 4 runtime") so the cause is obvious.
 the renderer mounts and the chat UI is present — the automated guard against
 "blank window" regressions. It also runs in CI on every push.
 
+## Let Claude finish it for you (autonomous local loop)
+
+The app can take a screenshot of itself, which lets a Claude Code agent running
+on *your* machine see what's on screen and self-correct until the avatar
+renders — no human relaying screenshots.
+
+- `npm run capture` boots the app headlessly, screenshots the real window to
+  `diagnostics/latest.png`, and writes a structured report (`status`, DOM,
+  console errors, whether the model/Ollama were found) to
+  `diagnostics/latest.json`.
+- `npm run iterate` = build + capture, the single step the loop repeats.
+
+To run the loop:
+
+1. Install **Claude Code** on your PC (VS Code extension, desktop app, or
+   `npm i -g @anthropic-ai/claude-code`).
+2. Open this project folder in Claude Code.
+3. Run the bundled command: **`/iterate`**.
+
+It runs `npm run iterate`, *looks at* `diagnostics/latest.png` + `latest.json`,
+diagnoses, makes the smallest fix, and repeats until
+`status: "avatar-rendered"` — then type-checks, tests, commits, and pushes.
+(The loop is defined in `.claude/commands/iterate.md`.)
+
 ## Architecture
 
 One window, three processes (standard Electron isolation):

@@ -6,6 +6,9 @@ out/
 dist/
 *.tsbuildinfo
 
+# Headless capture artifacts (screenshots + reports)
+diagnostics/
+
 # Fetched assets (proprietary Cubism Core + non-redistributable sample models)
 resources/
 src/renderer/public/cubism/
