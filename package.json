@@ -19,7 +19,8 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "smoke": "xvfb-run -a env COMPANION_SMOKE=1 electron . --no-sandbox --disable-gpu"
   },
   "dependencies": {
     "lowdb": "^7.0.1",

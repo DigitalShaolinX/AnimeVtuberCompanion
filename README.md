@@ -100,6 +100,24 @@ manually.
 
 ---
 
+## Troubleshooting / diagnostics
+
+The app writes a plain-text log every run — share it if something misbehaves:
+
+- **Windows:** `%APPDATA%\live2d-anime-companion\diagnostics.log`
+- **macOS:** `~/Library/Application Support/live2d-anime-companion/diagnostics.log`
+- **Linux:** `~/.config/live2d-anime-companion/diagnostics.log`
+
+It records app/Electron/Chrome versions, whether the model and Ollama were
+found at startup, and any renderer console warnings/errors. The window also
+never goes blank: load failures are painted on-screen, and the avatar area
+shows a specific message (e.g. "No Live2D model found" or "Could not find
+Cubism 4 runtime") so the cause is obvious.
+
+`npm run smoke` boots the app headlessly (via `xvfb` on Linux/CI) and asserts
+the renderer mounts and the chat UI is present — the automated guard against
+"blank window" regressions. It also runs in CI on every push.
+
 ## Architecture
 
 One window, three processes (standard Electron isolation):

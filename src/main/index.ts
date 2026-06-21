@@ -13,6 +13,7 @@ import { getSettings, setSettings } from './store/settings'
 import { MemoryStore } from './store/memory'
 import { synthesizeWithPiper } from './tts-piper'
 import { findModelUrl, registerAssetScheme, serveAssets } from './assets'
+import { attachRendererDiagnostics, diagnosticsLogPath, initDiagnostics, log } from './diagnostics'
 
 registerAssetScheme()
 
@@ -38,6 +39,7 @@ function createWindow(): void {
     }
   })
 
+  attachRendererDiagnostics(mainWindow.webContents)
   mainWindow.on('ready-to-show', () => mainWindow?.show())
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
@@ -48,6 +50,36 @@ function createWindow(): void {
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+  }
+
+  // Headless self-test: after the page settles, inspect the rendered DOM and
+  // exit with a pass/fail code. Used by `npm run smoke` under xvfb in CI.
+  if (process.env.COMPANION_SMOKE) {
+    mainWindow.webContents.on('did-finish-load', () => {
+      setTimeout(() => void runSmokeCheck(), 4000)
+    })
+  }
+}
+
+async function runSmokeCheck(): Promise<void> {
+  const probe = `JSON.stringify({
+    rootChildren: document.getElementById('root')?.children.length ?? 0,
+    hasChatInput: !!document.querySelector('.chat-input textarea'),
+    stageStatus: (document.querySelector('.stage-status')?.textContent ?? '').trim(),
+    fatal: document.body.innerText.includes('hit an error')
+  })`
+  try {
+    const raw = await mainWindow!.webContents.executeJavaScript(probe)
+    const r = JSON.parse(raw)
+    log(`[smoke] DOM: ${raw}`)
+    const pass = r.rootChildren > 0 && r.hasChatInput && !r.fatal
+    log(`[smoke] result: ${pass ? 'PASS — renderer mounted, chat UI present' : 'FAIL'}`)
+    process.exitCode = pass ? 0 : 1
+  } catch (err) {
+    log(`[smoke] probe failed: ${(err as Error).message}`)
+    process.exitCode = 1
+  } finally {
+    app.quit()
   }
 }
 
@@ -141,10 +173,18 @@ function friendlyError(err: unknown): string {
 }
 
 app.whenReady().then(async () => {
+  initDiagnostics()
   serveAssets()
   db = await openDb(app.getPath('userData'))
   memory = new MemoryStore(db)
   registerIpc()
+
+  const modelUrl = await findModelUrl()
+  log(`[startup] model: ${modelUrl ?? 'NONE FOUND (resources/models empty — run fetch-assets)'}`)
+  const models = await listModels().catch(() => [] as string[])
+  log(`[startup] ollama: ${models.length} model(s) ${models.length ? '[' + models.join(', ') + ']' : '(server unreachable or empty)'}`)
+  log(`[startup] diagnostics log at: ${diagnosticsLogPath()}`)
+
   createWindow()
 
   app.on('activate', () => {
