@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DEFAULT_SETTINGS, type Settings } from '@shared/types'
 import { Live2DStage } from './live2d/Live2DStage'
-import { Live2DController } from './live2d/live2dController'
+import type { Live2DController } from './live2d/live2dController'
 import { parseEmotion } from './live2d/emotion'
 import { ChatPanel } from './chat/ChatPanel'
 import { useChat, type UiMessage } from './chat/useChat'

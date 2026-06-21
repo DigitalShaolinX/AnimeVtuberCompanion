@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Live2DController } from './live2dController'
+import type { Live2DController } from './live2dController'
 
 interface Live2DStageProps {
   /** Receives the initialised controller once the model has loaded. */
@@ -16,33 +16,45 @@ export function Live2DStage({ onReady }: Live2DStageProps) {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const controller = new Live2DController()
+    let controller: Live2DController | null = null
     let disposed = false
+    let onResize: (() => void) | null = null
 
     ;(async () => {
       try {
+        // Loaded lazily so a PIXI/Live2D failure degrades to an on-screen
+        // message instead of blanking the whole app.
+        const { Live2DController } = await import('./live2dController')
+        controller = new Live2DController()
         await controller.init(canvas)
+
         const url = await window.companion.getModelUrl()
         if (!url) {
-          setStatus('No model found. Run "npm run fetch-assets" to download the sample model.')
+          setStatus(
+            'No Live2D model found. The asset download may have been blocked — ' +
+              'run "npm run fetch-assets" (or re-run start.bat), then reopen.'
+          )
           return
         }
         await controller.load(url)
-        if (disposed) return
+        if (disposed) {
+          controller.destroy()
+          return
+        }
         setStatus('')
+        onResize = () => controller?.resize()
+        window.addEventListener('resize', onResize)
         onReadyRef.current(controller)
       } catch (err) {
-        setStatus(`Could not load model: ${(err as Error).message}`)
+        console.error('[Live2DStage] load failed:', err)
+        setStatus(`Could not load the avatar: ${(err as Error).message}`)
       }
     })()
 
-    const onResize = () => controller.resize()
-    window.addEventListener('resize', onResize)
-
     return () => {
       disposed = true
-      window.removeEventListener('resize', onResize)
-      controller.destroy()
+      if (onResize) window.removeEventListener('resize', onResize)
+      controller?.destroy()
     }
   }, [])
 

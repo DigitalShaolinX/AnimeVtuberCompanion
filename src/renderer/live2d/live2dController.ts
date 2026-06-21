@@ -1,10 +1,11 @@
 import * as PIXI from 'pixi.js'
-import { Live2DModel } from 'pixi-live2d-display-lipsyncpatch'
+// Import the Cubism 4/5-only entry. The package's combined "." entry also pulls
+// in the Cubism 2 runtime (which references window.Live2D at load and can throw
+// in a fresh renderer); /cubism4 is the correct, lighter path for .model3.json
+// models like the Hiyori sample.
+import { Live2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4'
 import { resolveExpression } from './emotion'
 import type { Emotion } from '@shared/types'
-
-// Register PIXI's shared ticker so the fork auto-updates motion/physics/breath.
-Live2DModel.registerTicker(PIXI.Ticker)
 
 const MOUTH_PARAM = 'ParamMouthOpenY'
 const EYE_L = 'ParamEyeLOpen'
@@ -40,6 +41,10 @@ export class Live2DController {
   private blinkValue = 1
 
   async init(canvas: HTMLCanvasElement): Promise<void> {
+    // Register PIXI's shared ticker so the fork auto-updates motion/physics/
+    // breath. Done here (not at module load) so an init issue can be caught.
+    Live2DModel.registerTicker(PIXI.Ticker)
+
     this.app = new PIXI.Application({
       view: canvas,
       backgroundAlpha: 0,
@@ -85,11 +90,12 @@ export class Live2DController {
     const bounds = m.getLocalBounds()
     const safeW = bounds.width || m.width || 1
     const safeH = bounds.height || m.height || 1
-    // Fit ~85% of height, never wider than the stage, anchored centre-bottom.
-    const scale = Math.min((height * 0.92) / safeH, (width * 0.95) / safeW)
+    // Fit within the stage (whichever of width/height binds first) and centre
+    // her. anchor is 0.5/0.5, so position == centre of her bounding box.
+    const scale = Math.min((height * 0.95) / safeH, (width * 0.95) / safeW)
     m.scale.set(scale)
     m.x = width / 2
-    m.y = height // anchor.y = 0.5, so this seats her lower body near the bottom
+    m.y = height / 2
   }
 
   resize(): void {
