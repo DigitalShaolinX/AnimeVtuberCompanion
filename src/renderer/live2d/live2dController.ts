@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js'
+import { install as installUnsafeEval } from '@pixi/unsafe-eval'
 // Import the Cubism 4/5-only entry. The package's combined "." entry also pulls
 // in the Cubism 2 runtime (which references window.Live2D at load and can throw
 // in a fresh renderer); /cubism4 is the correct, lighter path for .model3.json
@@ -41,6 +42,12 @@ export class Live2DController {
   private blinkValue = 1
 
   async init(canvas: HTMLCanvasElement): Promise<void> {
+    // PIXI normally generates shader/batch code with new Function(), which our
+    // Content-Security-Policy blocks ("does not allow unsafe-eval"). This patch
+    // makes PIXI avoid eval so it renders under a strict CSP. Must run before
+    // any renderer/shader is created.
+    installUnsafeEval(PIXI)
+
     // Register PIXI's shared ticker so the fork auto-updates motion/physics/
     // breath. Done here (not at module load) so an init issue can be caught.
     Live2DModel.registerTicker(PIXI.Ticker)
